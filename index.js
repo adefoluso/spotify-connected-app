@@ -1,10 +1,10 @@
 require('dotenv').config();
 const querystring = require('querystring');
 const express = require('express');
-const axios = require('axios');
 
 
 const app = express();
+const axios = require('axios'); 
 const port = 8888;
 
 const CLIENT_ID = process.env.CLIENT_ID
@@ -48,7 +48,7 @@ app.get('/login', (req, res) => {
 })
 
 
-app.get('/callback', (req, res) =>{
+app.get('/callback', (req, res) => {
     const code = req.query.code || null;
     axios({
         method: 'post',
@@ -65,36 +65,41 @@ app.get('/callback', (req, res) =>{
     })
      .then(response =>{
          if(response.status == 200) {
+             const {access_token, token_type} = response.data
+             const {refresh_token} = response.data
 
-            const {acces_token, token_type} = response.data;
-            const {refresh_token} = response.data
-            
+             axios.get(`http://localhost:8888/refresh_token?refresh_token=${refresh_token}`)
+             .then(response => {
+                 res.send(`<pre>${JSON.stringify(response.data, null,2)}</pre>`)
 
-            // axios.get('https://api.spotify.com/v1/me', {
-            //     headers: {
-            //         Authorization: `${token_type} ${access_token}`
-            //     }
+             })
+             .catch(error =>{
+                 res.send(error)
+             })
+            //  axios.get('https://api.spotify.com/v1/me', {
+            //      headers:{
+            //          Authorization: `${token_type} ${access_token}`
+            //      }
+            //  })
+            //  .then(response => {
+            //     res.send(`<pre>${JSON.stringify(response.data, null, 2)}</pre>`)
+            //  })
+            //  .catch(error =>{
+            //    res.send(error);
             // })
-            axios.get(`http://localhost:8888/refresh_token?refresh_token=${refresh_token}`)
-            .then(response =>{
-                res.send(`<pre>${JSON.stringify(response.data, null, 2)}</pre>`)
-            })
-            .catch(error => {
-                res.send(error);
-            });     
+             
          }else{
-             res.send(response)
-         }
+             res.send(response);
+            }
      })
-     .catch(error =>[
-         res.send(error)
-     ])
-      
+      .catch(error => {
+       res.send(error);
+      }); 
     
 })
 
 app.get('/refresh_token', (req, res) =>{
-    const refresh_token = req.query.code
+    const {refresh_token} = req.query
     axios({
         method: 'post',
         url: 'https://accounts.spotify.com/api/token',
